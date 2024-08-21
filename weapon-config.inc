@@ -962,7 +962,7 @@ stock const g_WeaponName[57][WC_MAX_WEAPON_NAME] = {
 #endif
 
 // Sorry about the mess..
-static s_LagCompMode;
+static s_LagCompMode[MAX_PLAYERS];
 static WEAPON:s_LastExplosive[MAX_PLAYERS];
 static s_LastShot[MAX_PLAYERS][E_SHOT_INFO];
 static s_LastShotTicks[MAX_PLAYERS][10];
@@ -1136,6 +1136,11 @@ stock WC_IsPlayerSpawned(playerid)
 stock WC_IsPlayerPaused(playerid)
 {
 	return (GetTickCount() - s_LastUpdate[playerid] > 2000);
+}
+
+stock WC_SetPlayerLagCompMode(playerid, lagcompmode)
+{
+	s_LagCompMode[playerid] = lagcompmode;
 }
 
 stock AverageShootRate(playerid, shots, &multiple_weapons = 0)
@@ -3817,7 +3822,7 @@ public OnPlayerGiveDamage(playerid, damagedid, Float:amount, WEAPON:weaponid, bo
 		return 0;
 	}
 
-	if (!s_LagCompMode) {
+	if (!s_LagCompMode[damagedid]) {
 		new npc = IsPlayerNPC(damagedid);
 
 		if (weaponid == WEAPON_KNIFE && _:amount == _:0.0) {
@@ -4211,7 +4216,7 @@ public OnPlayerTakeDamage(playerid, issuerid, Float:amount, WEAPON:weaponid, bod
 	}
 
 	// If it's lagcomp, only allow damage that's valid for both modes
-	if (s_LagCompMode && s_ValidDamageTaken[weaponid] != 2) {
+	if (s_LagCompMode[issuerid] && s_ValidDamageTaken[weaponid] != 2) {
 		if (issuerid != INVALID_PLAYER_ID
 		&& (weaponid == WEAPON_M4 || weaponid == WEAPON_MINIGUN)
 		&& GetPlayerState(issuerid) == PLAYER_STATE_DRIVER) {
@@ -4902,17 +4907,23 @@ static ScriptInit()
 	new version[16];
 	GetConsoleVarAsString("version", version, sizeof(version));
 
+	new lagcompmode;
+
 	if (strfind(version, "open.mp") != -1) {
-		s_LagCompMode = GetConsoleVarAsInt("game.lag_compensation_mode");
+		lagcompmode = GetConsoleVarAsInt("game.lag_compensation_mode");
 	} else {
-		s_LagCompMode = GetConsoleVarAsInt("lagcompmode");
+		lagcompmode = GetConsoleVarAsInt("lagcompmode");
 	}
 
-	if (s_LagCompMode) {
+	if (lagcompmode) {
 		SetKnifeSync(false);
 	} else {
 		s_DamageTakenSound = 0;
 		SetKnifeSync(true);
+	}
+
+	for (new i = 0; i < MAX_PLAYERS; i++) {
+		s_LagCompMode[i] = lagcompmode;
 	}
 
 	for (new i = 0; i < sizeof(s_ClassSpawnInfo); i++) {
@@ -5743,7 +5754,7 @@ static ProcessDamage(&playerid, &issuerid, &Float:amount, &WEAPON:weaponid, &bod
 		case DAMAGE_TYPE_RANGE,
 		     DAMAGE_TYPE_RANGE_MULTIPLIER: {
 			new Float:length = 0.0;
-			if (s_LagCompMode) {
+			if (s_LagCompMode[issuerid]) {
 				length = s_LastShot[issuerid][e_Length];
 			} else {
 				new Float:X, Float:Y, Float:Z;
@@ -6761,7 +6772,7 @@ public OnPlayerDamageDone(playerid, Float:amount, issuerid, WEAPON:weapon, bodyp
 	if (!IsHighRateWeapon(weapon)) {
 		DebugMessageAll("OnPlayerDamageDone(%d did %f to %d with %d on bodypart %d)", issuerid, amount, playerid, weapon, bodypart);
 
-		if (s_DamageTakenSound) {
+		if (s_DamageTakenSound && s_LagCompMode[playerid]) {
 			PlayerPlaySound(playerid, s_DamageTakenSound, 0.0, 0.0, 0.0);
 
 			#if defined _Y_ITERATE_LOCAL_VERSION || defined _FOREACH_LOCAL_VERSION
