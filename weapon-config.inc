@@ -3451,54 +3451,6 @@ public OnPlayerKeyStateChange(playerid, KEY:newkeys, KEY:oldkeys)
 				SetTimerEx("WC_CbugPunishment", 600, false, "ii", playerid, GetPlayerWeapon(playerid));
 
 				s_CbugFroze[playerid] = tick;
-
-				new j = 0, Float:health, Float:armour;
-
-				#if defined _Y_ITERATE_LOCAL_VERSION || defined _FOREACH_LOCAL_VERSION
-				foreach (new i : Player) {
-				#else
-				for (new i = 0; i != MAX_PLAYERS; i++) {
-				#endif
-					for (j = 0; j < sizeof(s_PreviousHits[]); j++) {
-						if (s_PreviousHits[i][j][e_Issuer] == playerid && tick - s_PreviousHits[i][j][e_Tick] <= 1200) {
-							s_PreviousHits[i][j][e_Issuer] = INVALID_PLAYER_ID;
-
-							health = WC_GetPlayerHealth(i);
-							armour = WC_GetPlayerArmour(i);
-
-							if (s_IsDying[i]) {
-								if (!s_DelayedDeathTimer[i]) {
-									continue;
-								}
-
-								KillTimer(s_DelayedDeathTimer[i]);
-								s_DelayedDeathTimer[i] = 0;
-								ClearAnimations(i, FORCE_SYNC:1);
-								SetFakeFacingAngle(i, _);
-								FreezeSyncPacket(i, .toggle = false);
-
-								s_IsDying[i] = false;
-
-								#if defined _INC_open_mp
-									if (s_RestorePlayerTeleport[i]) {
-										s_RestorePlayerTeleport[i] = false;
-										AllowPlayerTeleport(i, true);
-									}
-								#endif
-
-								if (s_DeathTimer[i]) {
-									KillTimer(s_DeathTimer[i]);
-									s_DeathTimer[i] = 0;
-								}
-							}
-
-							health += s_PreviousHits[i][j][e_Health];
-							armour += s_PreviousHits[i][j][e_Armour];
-
-							WC_SetPlayerHealth(i, health, armour);
-						}
-					}
-				}
 			}
 		}
 	}
