@@ -4216,7 +4216,7 @@ public OnPlayerTakeDamage(playerid, issuerid, Float:amount, WEAPON:weaponid, bod
 	}
 
 	// If it's lagcomp, only allow damage that's valid for both modes
-	if (s_LagCompMode[issuerid] && s_ValidDamageTaken[weaponid] != 2) {
+	if (s_LagCompMode[playerid] && s_ValidDamageTaken[weaponid] != 2) {
 		if (issuerid != INVALID_PLAYER_ID
 		&& (weaponid == WEAPON_M4 || weaponid == WEAPON_MINIGUN)
 		&& GetPlayerState(issuerid) == PLAYER_STATE_DRIVER) {
